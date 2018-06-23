@@ -10,14 +10,14 @@ def main(_):
   # Configurations
   th = core.th
   th.model = models.mlp
-  th.num_blocks = 3
-  th.hidden_dim = 1000
+  th.num_blocks = 2
+  th.hidden_dim = 500
   th.actype1 = 'relu'
   th.idle_tol = 30
 
   th.epoch = 500
   th.learning_rate = 1e-3
-  th.batch_size = 1
+  th.batch_size = 64
   th.validation_per_round = 1
   th.print_cycle = 1
   th.shuffle = True
@@ -33,7 +33,7 @@ def main(_):
   th.summary = True
   th.monitor = False
 
-  description = ''
+  description = 'demo'
   th.mark = 'mlp_{}x{}{}'.format(th.hidden_dim, th.num_blocks, description)
 
   core.activate()

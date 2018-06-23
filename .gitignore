@@ -7,10 +7,13 @@
 
 # Ignore 
 *.pkl
+*.csv
+*.ipynb
 
 # Ignore records and data folders
 *records*/
 data/
+.ipynb_checkpoints/
 
 # Ignore vim files
 *.swp

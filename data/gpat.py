@@ -2,11 +2,14 @@ import os
 import numpy as np
 import librosa
 import pandas as pd
+from tensorflow.python.keras.utils import to_categorical
 
 from tframe import console
+from tframe import pedia
 from tframe.data.sequences.signals.signal import Signal
 from tframe.data.dataset import DataSet
 from tframe.data.sequences.signals.signal_set import SignalSet
+from tframe.models import Classifier
 
 from data.utils import get_sizeof_series
 from data.utils import un_zip
@@ -88,16 +91,17 @@ class GPAT(object):
 		if labeled:
 			csv_file = 'train.csv'
 			ver_file_indexes, ver_labels,  unver_file_indexes, unver_labels = \
-				cls.load_labeled_data( ori_data_root_path + '/' + csv_file)
-			cls.load_original_data(ver_file_indexes, output_path,
+				cls.load_labeled_data(ori_data_root_path + '/' + csv_file)
+			cls.load_original_data(ver_file_indexes, output_path, one_by_one=True,
 			                       sample_rate_=sample_rate_, labels=ver_labels)
 			cls.load_original_data(unver_file_indexes, output_path, ver=False,
-			                       sample_rate_=sample_rate_, labels=unver_labels)
+			                       sample_rate_=sample_rate_, one_by_one=True,
+			                       labels=unver_labels)
 		else:
 			file_indexes = os.listdir(data_dir)
 			cls.load_original_data(file_indexes, output_path,
-			                       sample_rate_=sample_rate_)
-				
+			                       sample_rate_=sample_rate_, one_by_one=True)
+			
 	@staticmethod
 	def load_singal_set_data(file_path, train=True):
 		"""Load the whole files that the expanded-name
@@ -130,12 +134,17 @@ class GPAT(object):
 		
 		train_verified = train[train.manually_verified == 1]
 		train_unverified = train[train.manually_verified == 0]
-		
+	
 		return train_verified.index, train_verified["label_idx"], \
 		       train_unverified.index, train_unverified["label_idx"]
 	
 	@staticmethod
-	def load_original_data(file_indexes, output_path,
+	def get_total_labels(file_path):
+		train = pd.read_csv(file_path)
+		return list(train.label.unique())
+	
+	@staticmethod
+	def load_original_data(file_indexes, output_path, one_by_one=False,
 	                       sample_rate_=16000, labels=None, ver=True):
 		signals_ = []
 		labels_tmp = []
@@ -147,28 +156,45 @@ class GPAT(object):
 			memory_szie += get_sizeof_series(data)
 			signal_data = Signal(data, fs=sample_rate_)
 			signals_.append(signal_data)
-			if labels is not None:
-				labels_tmp.append(labels[file_index])
-			if ((memory_szie/100) > 100) or (i == len(file_indexes) - 1):
-				if labels is not None:
-					signal_s = SignalSet(signals_, data_dict={'labels':labels_tmp})
-					if ver is True:
-						signal_file_name = output_path + '/' + 'ver_audio_data_' + str(file_id) + '.tfds'
+			if one_by_one is True:
+					if labels is not None:
+						label_one_hot = to_categorical(labels[file_index],
+						                               num_classes=41).reshape(1, -1)
+						signal_s = SignalSet(signal_data,
+																 data_dict={'labels':label_one_hot})
 					else:
-						signal_file_name = output_path + '/' + 'unver_audio_data_' + str(file_id) + '.tfds'
-				else:
-					signal_s = SignalSet(signals_, data_dict=None)
-					signal_file_name = output_path + '/' + 'audio_data_' + str(file_id) + '.tfds'
-				signal_s.save(signal_file_name)
-				signals_ = []
-				file_id += 1
-				memory_szie = 0
-				labels_tmp = []
+						signal_s = SignalSet(signal_data)
+					signal_file_name = output_path + '/' + file_index.replace('.wav',
+					                                                          '.tfds')
+					signal_s.save(signal_file_name)
+			else:
+				if labels is not None:
+					labels_tmp.append(labels[file_index])
+				if ((memory_szie/100) > 100) or (i == len(file_indexes) - 1):
+					if labels is not None:
+						signal_s = SignalSet(signals_, data_dict={'labels':labels_tmp})
+						if ver is True:
+							signal_file_name = output_path + '/' + 'ver_audio_data_' + str(file_id) + '.tfds'
+						else:
+							signal_file_name = output_path + '/' + 'unver_audio_data_' + str(file_id) + '.tfds'
+					else:
+						signal_s = SignalSet(signals_, data_dict=None)
+						signal_file_name = output_path + '/' + 'audio_data_' + str(file_id) + '.tfds'
+					signal_s.save(signal_file_name)
+					signals_ = []
+					file_id += 1
+					memory_szie = 0
+					labels_tmp = []
+				
 	@staticmethod
-	def evaluate(f, dataset):
-		if not callable(f): raise AssertionError('!! Input f mustbe callable')
-		
-	
+	def evaluate(model, data_set):
+		assert isinstance(data_set, SignalSet)
+		assert isinstance(model, Classifier)
+		num_steps = 500
+		for feature in data_set.features:
+			batch_size = len(feature) // num_steps
+			model.predict(DataSet(feature=feature), batch_size=batch_size)
+			
 	@staticmethod
 	def audio_norm(data):
 		max_data = np.max(data)
@@ -205,11 +231,85 @@ class GPAT(object):
 			else:
 				return sig_list
 	
+	@staticmethod
+	def load_small_amount_data(path, memory_depth, file_num=12000, rnn=False,
+	                           use_mfcc=False, sample_rate=16000, duration=2):
+		sig_list = []
+		sig_labels = []
+		global labeled
+		for i, file_name in enumerate(os.listdir(path)):
+			sig_set = SignalSet.load(path + '/' + file_name)
+			if not rnn:
+				audio_length = sample_rate * duration
+				sig = GPAT.length_adapted(sig_set.signals[0], audio_length)
+				# sig = GPAT.audio_norm(sig)
+				sig_list.append(sig)
+			else:
+				sig_list.append(sig_set.signals[0])
+			if pedia.labels in sig_set.data_dict.keys():
+				label = sig_set.data_dict[pedia.labels][0]
+				sig_labels.append(to_categorical(label, num_classes=41).reshape((1, -1)))
+				labeled = True
+			else:
+				labeled = False
+			if i > file_num: break
+		if rnn:
+			train_set = SignalSet(sig_list, data_dict={'labels':sig_labels})
+			train_set.init_features_and_targets(targets_key=pedia.labels,
+																					memory_depth=memory_depth,
+																					skip_head=True)
+		else:
+			sig_array = np.array(sig_list)
+			# sig_array = np.expand_dims(sig_array, axis=2)
+			if labeled:
+				label_array = np.zeros(shape=(len(sig_labels), 41))
+				for i in range(len(sig_labels)):
+					label_array[i, :] = sig_labels[i]
+				train_set = DataSet(features=sig_array, targets=label_array)
+			else:
+				train_set = DataSet(features=sig_array)
+		val_set = train_set
+		test_set = train_set
+		train_set.save('./processed_data/traindata_fs_16000_1_unnorm')
+		return train_set, val_set, test_set
+	
+	@staticmethod
+	def load_tfds_data_as_set(root_path):
+		files = os.listdir(root_path)
+		sig_list = []
+		for i, file in enumerate(files):
+			file_path = os.path.join(root_path, file)
+			sig = SignalSet.load(file_path)
+			sig_tmp = np.array(sig.signals[0])
+			sig_list.append(sig_tmp)
+			if pedia.labels in sig.data_dict.keys():
+				if i == 0:
+					targets = sig.data_dict[pedia.labels]
+				else:
+					target = sig.data_dict[pedia.labels]
+					targets = np.concatenate((targets, target), axis=0)
+			else:
+				targets = None
+		if targets is not None:
+			data_set = DataSet(features=sig_list, targets=targets)
+			data_set.save('./processed_data/traindata_fs_16000_all')
+		else:
+			data_set = DataSet(features=sig_list)
+			data_set.save('./processed_data/testdata_fs_16000_all')
+			
 if __name__ == '__main__':
-	data_dir = './original_data/audio_test'
-	GPAT.load_as_signals_data(data_dir, sample_rate=16000, labeled=False)
+	# data_dir = './original_data/audio_train'
+	# GPAT.load_as_signals_data(data_dir, sample_rate=16000)
 	# data_dir = './original_data'
 	# train_set, val_set, test_set = GPAT.load_rnn_data(data_dir, sample_rate=16000,
 	#                                                   validate_size=300,
 	#                                                   assump_test=True)
+	# path = 'original_data/traindata_fs_16000'
+	# train_set, val_set, test_set = GPAT.load_small_amount_data(path, 1)
+	# file_path = './processed_data/traindata_fs_16000_all_test.tfd'
+	# file_path = './processed_data/traindata_fs_16000_all.tfd'
+	path = 'original_data/traindata_fs_16000'
+	GPAT.load_tfds_data_as_set(path)
+	# dataset = DataSet.load(file_path)
+	# a = 1
 

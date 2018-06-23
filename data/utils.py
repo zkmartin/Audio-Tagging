@@ -30,8 +30,9 @@ def un_zip(file_name, current_path=False, extract_path=None):
 
 def makdir(path):
 	if os.path.isdir(path):
-		shutil.rmtree(path)
-		os.mkdir(path)
+		# shutil.rmtree(path)
+		# os.mkdir(path)
+		pass
 	else:
 		os.mkdir(path)
 
