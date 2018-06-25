@@ -240,19 +240,22 @@ def multiinput(th):
   subsubnet.add(Dropout(0.8))
 
   subsubnet.add(Conv1D(filters=32, kernel_size=3, padding='valid'))
+  subsubnet.add(BatchNorm())
   subsubnet.add(Activation('relu'))
   subsubnet.add(Conv1D(filters=32, kernel_size=3, padding='valid'))
+  subsubnet.add(BatchNorm())
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool1D(pool_size=4, strides=4))
   subsubnet.add(Dropout(0.9))
 
   subsubnet.add(Conv1D(filters=32, kernel_size=3, padding='valid'))
+  subsubnet.add(BatchNorm())
   subsubnet.add(Activation('relu'))
   subsubnet.add(Conv1D(filters=32, kernel_size=3, padding='valid'))
+  subsubnet.add(BatchNorm())
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool1D(pool_size=4, strides=4))
   # ! ! !
-  model.add(Dropout(0.9))
 
   subsubnet.add(Conv1D(filters=256, kernel_size=3, padding='valid'))
   subsubnet.add(BatchNorm())
@@ -289,15 +292,18 @@ def multiinput(th):
   subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
   subsubnet.add(Dropout(th.keep_prob))
   subsubnet.add(Flatten())
-  
+
+  model.add(Dropout(th.concat_keep_prob))
   model.add(Linear(output_dim=128))
   model.add(BatchNorm())
   model.add(Activation('relu'))
+  model.add(Dropout(th.concat_keep_prob))
   #
   model.add(Linear(output_dim=64))
   model.add(BatchNorm())
   model.add(Activation('relu'))
-
+  model.add(Dropout(th.concat_keep_prob))
+  
   # Add output layer
   model.add(Linear(output_dim=41))
   model.add(Activation('softmax'))
@@ -346,7 +352,7 @@ def multinput_mlp(th):
   subsubnet.add(BatchNorm())
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
-  subsubnet.add(Dropout(0.8))
+  subsubnet.add(Dropout(0.7))
 
   subsubnet.add(Flatten())
 
@@ -409,7 +415,7 @@ def res_00(th):
   subsubnet.add(Conv1D(filters=32, kernel_size=3, padding='valid'))
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool1D(pool_size=4, strides=4))
-  model.add(Dropout(0.9))
+  model.add(Dropout(0.8))
   
   subsubnet.add(Conv1D(filters=256, kernel_size=3, padding='valid'))
   subsubnet.add(BatchNorm())
@@ -422,10 +428,8 @@ def res_00(th):
   # the net to process mfcc features
   subsubnet = subnet.add()
   subsubnet.add(Input(sample_shape=[dim[0], dim[1], 1], name='mfcc'))
-  net = subsubnet.add(ResidualNet())
-  net.add(Conv2D(32, (4, 10), padding='same'))
-  net.add(BatchNorm())
-  net.add_shortcut()
+  subsubnet.add(Conv2D(32, (4, 10), padding='same'))
+  subsubnet.add(BatchNorm())
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
   subsubnet.add(Dropout(th.keep_prob))

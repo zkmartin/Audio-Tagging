@@ -18,6 +18,7 @@ from data.gpat import GPAT
 from at.gpat_data import Gpat_set
 from tframe.utils.misc import convert_to_dense_labels
 from tframe.utils import console
+from tframe.utils.local import check_path
 from tensorflow.python.keras.utils import to_categorical
 
 from sklearn.cross_validation import StratifiedKFold
@@ -94,7 +95,11 @@ def evaluate(model, dataset, th, raw_dataset=None,
       # gpat_scores = get_scores(prods, dataset.targets)
       # console.supplement('>> The Scores are {}'.format(gpat_scores))
   else:
-    prods = model.classify(data=dataset, extractor=gpat_extrator)
+    prods = model.classify(data=dataset, extractor=gpat_extrator,
+                           batch_size=64)
+    prods_path = 'prods/'
+    check_path(prods_path)
+    pickle_data(prods, os.path.join(prods_path, th.mark) + '.pkl')
     data_path = '../data/original_data'
     tra_csv_path = data_path + '/' + 'train.csv'
     sub_csv_path = data_path + '/' + 'sample_submission.csv'
@@ -207,11 +212,17 @@ def prepare_data(df, config, data_dir, noise=False):
         X[i,] = data
     return X, X_t
 
-def preprocess(data):
-  mean = np.mean(data, axis=0)
+def preprocess(data, train_mean=None):
+  if train_mean is None:
+    mean = np.mean(data, axis=0)
+  else:
+    mean = train_mean
   std = np.std(data, axis=0)
   X_train = (data - mean) / std
-  return X_train
+  if train_mean is None:
+    return X_train, mean
+  else:
+    return X_train
   
 
 def load_demo_data(path):
@@ -231,7 +242,8 @@ def load_demo_data(path):
   X_train, X_train_t = prepare_data(train_csv, config, path)
   # X_train_n = prepare_data(train, config, path, noise=True)
   y_train = to_categorical(train_csv.label_idx, num_classes=config.n_classes)
-  X_train = preprocess(X_train)
+  X_train, train_mean = preprocess(X_train)
+  pickle_data(train_mean, '../data/original_data/train_mean.pkl')
   # TODO:
   
   # split the train_set and the val_set
@@ -242,11 +254,7 @@ def load_demo_data(path):
       train_split_0 = train_split
       val_split_0 = val_split
       break
-  # X_train_n = preprocess(X_train_n)
-  # mean = np.mean(X_train, axis=0)
-  # std = np.std(X_train, axis=0)
-  # X_train = (X_train - mean) / std
-  # X_test = (X_test - mean) / std
+		  
   X_train_t = np.expand_dims(X_train_t, axis=-1)
   
   features = X_train_t[train_split_0]
@@ -259,6 +267,26 @@ def load_demo_data(path):
                     data_dict={'mfcc': X_train[val_split_0]})
   
   return train_set, val_set
+
+def load_test_data(path, train_mean):
+  test = pd.read_csv("../data/original_data/sample_submission.csv")
+  test.set_index("fname", inplace=True)
+  
+  train_csv = test
+  # test = pd.read_csv("../data/original_data/sample_submission.csv")
+  config = Config(sampling_rate_raw=16000, audio_duration=2, n_folds=10,
+                  learning_rate=0.001, use_mfcc=True, n_mfcc=50,
+                  sampling_rate=16000)
+  X_train, X_train_t = prepare_data(train_csv, config, path)
+  # X_train_n = prepare_data(train, config, path, noise=True)
+  X_train = preprocess(X_train, train_mean=train_mean)
+  # TODO:
+  
+  X_train_t = np.expand_dims(X_train_t, axis=-1)
+  
+  test_set = DataSet(features=X_train_t, data_dict={'mfcc':X_train})
+  
+  return test_set
 
 def pickle_data(data, file_name):
     with open(file_name, 'wb') as f:
@@ -274,10 +302,10 @@ if __name__ == '__main__':
   # train_set, val_set, test_set = load_data(path)
   # a = next(train_set.gen_batches(batch_size=32))
   # b = next(val_set.gen_batches(batch_size=32))
-  # path = '../data/original_data/audio_train/'
-  # train_set, val_set = load_demo_data(path)
-  path = '../data/processed_data/traindata_fs_16000_all.tfd'
-  csv_path = '../data/original_data/train.csv'
-  train_set, val_set, test_set = load_data(path, csv_path)
+  path = '../data/original_data/audio_train/'
+  train_set, val_set = load_demo_data(path)
+  # path = '../data/processed_data/traindata_fs_16000_all.tfd'
+  # csv_path = '../data/original_data/train.csv'
+  # train_set, val_set, test_set = load_data(path, csv_path)
   a = 1
   

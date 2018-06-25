@@ -5,13 +5,13 @@ from tframe.utils.misc import mark_str as ms
 import model_lib as models
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 def main(_):
   console.start('Multinput task')
 
   # Configurations
   th = core.th
-  th.job_dir = 'dropout_test'
+  th.job_dir = 'concat_part_test'
   th.model = models.multiinput
   th.actype1 = 'relu'
 
@@ -21,7 +21,7 @@ def main(_):
   th.validation_per_round = 1
   th.val_batch_size = th.batch_size
   th.print_cycle = 20
-  th.patience = 30
+  th.patience = 100
   th.shuffle = True
 
   # th.train = False
@@ -39,11 +39,13 @@ def main(_):
   th.allow_growth = False
   th.gpu_memory_fraction = 0.4
   
-  th.keep_prob = 0.9
+  th.keep_prob = 0.7
+  th.concat_keep_prob = 0.8
   
   # description = 'cnn_raw_data_mfcc_random_rand'
-  description = 'raw_data_mfcc_dropout_{}_sap_all_fc_0.8'.format(
-                th.keep_prob, th.reg_strength)
+  description = 'raw_data_mfcc_dropout_{}_sap_all_{}_add_2_drop'.format(
+                th.keep_prob, th.concat_keep_prob)
+  # description = 'raw_data_mfcc_simlified_dropout_0.7_reg_0.2_sap_all'
   th.mark = 'cnn_{}'.format(description)
 
   export_false = True

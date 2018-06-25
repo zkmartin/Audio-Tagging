@@ -22,6 +22,7 @@ data/
 foobar/
 *foo*
 *bar*
+foo*
 
 # Ignore packages in trainer
 */trainer/models

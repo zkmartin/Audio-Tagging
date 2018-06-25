@@ -51,7 +51,21 @@ from at.data_utils import load_simulate_test_data
 # # Runs the op.
 # 	print(sess.run(c))
 
-a = []
-for i in a:
-	assert isinstance(i, list)
-	print(i)
+csv_file_path = 'data/original_data/sample_submission.csv'
+submission = pd.read_csv(csv_file_path)
+submission.set_index('fname', inplace=True)
+labels = submission['label']
+print(labels[0].split(' ')[0])
+
+def compare_submmits(csv_path_1, csv_path_2):
+	submission_1 = pd.read_csv(csv_path_1)
+	submission_2 = pd.read_csv(csv_path_2)
+	
+	def get_labels_as_list(sub):
+		labels_fir = []
+		labels = sub['label']
+		for i in range(len(labels)):
+			labels.append()
+	
+
+

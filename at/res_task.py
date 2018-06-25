@@ -5,7 +5,7 @@ from tframe.utils.misc import mark_str as ms
 import model_lib as models
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 def main(_):
 	console.start('Multinput task')
 	
@@ -42,7 +42,7 @@ def main(_):
 	th.keep_prob = 0.7
 	
 	# description = 'cnn_raw_data_mfcc_random_rand'
-	description = 'raw_data_mfcc_dropout_{}_sap_res'.format(
+	description = 'raw_data_mfcc_dropout_{}_sap_res_0.8'.format(
 		th.keep_prob, th.reg_strength)
 	th.mark = 'cnn_{}'.format(description)
 	

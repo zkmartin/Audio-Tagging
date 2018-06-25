@@ -9,7 +9,7 @@ for _ in range(DIR_DEPTH + 1):
   sys.path.insert(0, ROOT)
 from tframe import console, SaveMode
 from tframe.trainers import SmartTrainerHub
-from data_utils import load_data, evaluate, load_demo_data
+from data_utils import load_data, evaluate, load_demo_data, load_test_data
 from tframe.data.dataset import DataSet
 from data_utils import load_simulate_test_data
 
@@ -43,8 +43,13 @@ def activate():
   # path = '../data/processed_data/traindata_fs_16000_all.tfd'
   # csv_path = '../data/original_data/train.csv'
   # train_set, val_set, test_set, raw_val_set = load_data(path, csv_path)
-  path = '../data/original_data/audio_train/'
-  train_set, val_set = load_demo_data(path)
+  if th.train:
+    path = '../data/original_data/audio_train/'
+    train_set, val_set = load_demo_data(path)
+  else:
+    path = '../data/original_data/audio_test/'
+    test_set = load_test_data(path)
+    
   # train_set2, val_set2, test_set2 = load_data(path2)
   # assert isinstance(train_set, DataSet)
   
@@ -53,7 +58,7 @@ def activate():
     model.train(train_set, validation_set=val_set, trainer_hub=th)
   else:
     model.launch_model(overwrite=False)
-    # evaluate(model, val_set, th, scores=True, raw_dataset=raw_val_set)
+    evaluate(model, test_set, th, scores=True)
     # evaluate(model, val_set)
     # evaluate(model, test_set, plot=True)
 
