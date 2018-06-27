@@ -12,11 +12,22 @@ from tframe.trainers import SmartTrainerHub
 from data_utils import load_data, evaluate, load_demo_data, load_test_data
 from tframe.data.dataset import DataSet
 from data_utils import load_simulate_test_data
+from tframe.config import Flag
 
 
 from_root = lambda path: os.path.join(ROOT, path)
+class GpatHub(SmartTrainerHub):
+  fold = Flag.integer(0, 'cross-validation fold id')
+  raw_keep_prob = Flag.float(0.7, 'raw part dropout keep prob')
+  mfcc_keep_prob = Flag.float(0.7, 'mfcc part dropout keep prob')
+  concat_keep_prob = Flag.float(0.9, 'concat part dropout keep prob')
+  visible_gpu_id = Flag.string("0", 'The gpu visible to cuda')
 
-th = SmartTrainerHub(as_global=True)
+GpatHub.register()
+
+# th = SmartTrainerHub(as_global=True)
+th = GpatHub(as_global=True)
+
 th.data_dir = from_root('data/original_data')
 th.job_dir = from_root('at/')
 
@@ -32,7 +43,7 @@ th.early_stop = True
 th.idle_tol = 10
 
 
-def activate(fold=0):
+def activate():
   assert callable(th.model)
   model = th.model(th)
   # assert isinstance(model, )
@@ -42,7 +53,8 @@ def activate(fold=0):
   # path = '../data/original_data/traindata_fs_16000'fd
   path = '../data/processed_data/traindata_fs_16000_all.tfd'
   csv_path = '../data/original_data/train.csv'
-  train_set, val_set, test_set, raw_val_set = load_data(path, csv_path, fold=fold)
+  train_set, val_set, test_set, raw_val_set = load_data(path,
+                                                        csv_path, fold=th.fold)
   # if th.train:
   #   path = '../data/original_data/audio_train/'
   #   train_set, val_set = load_demo_data(path)

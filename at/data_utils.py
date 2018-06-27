@@ -311,36 +311,6 @@ def read_pickle_data(file_name):
         data = pickle.load(f)
     return data
 
-
-def compare_lists(list_1, list_2):
-  assert len(list_1) == len(list_2)
-  different_indices = []
-  for i in range(len(list_1)):
-    if list_1[i] != list_2[i]:
-      different_indices.append(i)
-  
-  return different_indices
-
-def compare_submmits(csv_path_1, csv_path_2):
-  submission_1 = pd.read_csv(csv_path_1)
-  submission_2 = pd.read_csv(csv_path_2)
-  
-  def get_labels_as_list(sub):
-    labels_fir = []
-    labels = sub['label']
-    for i in range(len(labels)):
-      labels_fir.append(labels[i].split(' ')[0])
-      # labels_fir.append(labels[i])
-	    
-    return labels_fir
-  
-  sub_1 = get_labels_as_list(submission_1)
-  sub_2 = get_labels_as_list(submission_2)
-  
-  diff_indices = compare_lists(sub_1, sub_2)
-  
-  return diff_indices
-
 def prods_op(path, sub_name=None, rand_num=None):
   files = os.listdir(path)
   if rand_num is not None:

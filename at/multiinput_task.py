@@ -6,7 +6,8 @@ from tframe.utils.misc import mark_str as ms
 import model_lib as models
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = core.th.visible_gpu_id
 def main(_):
   console.start('Multinput task')
 
@@ -40,20 +41,22 @@ def main(_):
   th.allow_growth = False
   th.gpu_memory_fraction = 0.4
   
-  th.keep_prob = 0.7
+  th.raw_keep_prob = 0.7
+  th.mfcc_keep_prob = 0.7
   th.concat_keep_prob = 0.8
+  th.fold = 0
   
-  fold = 0
   # fold = Flag.integer(0, 'cross-validation fold id', is_key=True)
   # fold.register('fold')
   # description = 'cnn_raw_data_mfcc_random_rand'
   description = 'raw_data_mfcc_dropout_{}_random_{}_fold_{}'.format(
-                th.keep_prob, th.concat_keep_prob, fold)
+                th.mfcc_keep_prob, th.concat_keep_prob, th.fold)
+  # description = 'test'
   # description = 'raw_data_mfcc_simlified_dropout_0.7_reg_0.2_sap_all'
   th.mark = 'cnn_{}'.format(description)
 
   export_false = True
-  core.activate(fold)
+  core.activate()
 
 
 if __name__ == '__main__':
