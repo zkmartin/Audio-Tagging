@@ -12,6 +12,7 @@
 
 # Ignore records and data folders
 *records*/
+submissions/
 data/
 .ipynb_checkpoints/
 

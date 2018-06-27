@@ -32,7 +32,7 @@ th.early_stop = True
 th.idle_tol = 10
 
 
-def activate():
+def activate(fold=0):
   assert callable(th.model)
   model = th.model(th)
   # assert isinstance(model, )
@@ -40,15 +40,15 @@ def activate():
   # Load data
 
   # path = '../data/original_data/traindata_fs_16000'fd
-  # path = '../data/processed_data/traindata_fs_16000_all.tfd'
-  # csv_path = '../data/original_data/train.csv'
-  # train_set, val_set, test_set, raw_val_set = load_data(path, csv_path)
-  if th.train:
-    path = '../data/original_data/audio_train/'
-    train_set, val_set = load_demo_data(path)
-  else:
-    path = '../data/original_data/audio_test/'
-    test_set = load_test_data(path)
+  path = '../data/processed_data/traindata_fs_16000_all.tfd'
+  csv_path = '../data/original_data/train.csv'
+  train_set, val_set, test_set, raw_val_set = load_data(path, csv_path, fold=fold)
+  # if th.train:
+  #   path = '../data/original_data/audio_train/'
+  #   train_set, val_set = load_demo_data(path)
+  # else:
+  #   path = '../data/original_data/audio_test/'
+  #   test_set = load_test_data(path)
     
   # train_set2, val_set2, test_set2 = load_data(path2)
   # assert isinstance(train_set, DataSet)

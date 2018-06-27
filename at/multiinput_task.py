@@ -1,6 +1,7 @@
 import tensorflow as tf
 import core
 from tframe import console
+from tframe.config import Flag
 from tframe.utils.misc import mark_str as ms
 import model_lib as models
 import os
@@ -11,7 +12,7 @@ def main(_):
 
   # Configurations
   th = core.th
-  th.job_dir = 'concat_part_test'
+  th.job_dir = 'random_pos'
   th.model = models.multiinput
   th.actype1 = 'relu'
 
@@ -42,14 +43,17 @@ def main(_):
   th.keep_prob = 0.7
   th.concat_keep_prob = 0.8
   
+  fold = 0
+  # fold = Flag.integer(0, 'cross-validation fold id', is_key=True)
+  # fold.register('fold')
   # description = 'cnn_raw_data_mfcc_random_rand'
-  description = 'raw_data_mfcc_dropout_{}_sap_all_{}_add_2_drop'.format(
-                th.keep_prob, th.concat_keep_prob)
+  description = 'raw_data_mfcc_dropout_{}_random_{}_fold_{}'.format(
+                th.keep_prob, th.concat_keep_prob, fold)
   # description = 'raw_data_mfcc_simlified_dropout_0.7_reg_0.2_sap_all'
   th.mark = 'cnn_{}'.format(description)
 
   export_false = True
-  core.activate()
+  core.activate(fold)
 
 
 if __name__ == '__main__':

@@ -1,6 +1,7 @@
 import numpy as np
 import librosa
 import os
+import random
 import pandas as pd
 
 try:
@@ -20,6 +21,9 @@ from tframe.utils.misc import convert_to_dense_labels
 from tframe.utils import console
 from tframe.utils.local import check_path
 from tensorflow.python.keras.utils import to_categorical
+from collections import Counter
+import matplotlib.pyplot as plt
+from utils.vote import VoteEngine
 
 from sklearn.cross_validation import StratifiedKFold
 
@@ -27,7 +31,7 @@ from sklearn.cross_validation import StratifiedKFold
 # path = '../data/original_data/traindata_fs_44100/signal_data_0.tfds'
 # path = '../data/original_data/traindata_fs_16000'
 path = '../data/original_data/traindata_fs_16000_all.tfd'
-def load_data(path, csv_path):
+def load_data(path, csv_path, fold=0):
   # TODO:
   train = pd.read_csv(csv_path)
   LABELS = list(train.label.unique())
@@ -38,9 +42,10 @@ def load_data(path, csv_path):
   skf = StratifiedKFold(train.label_idx, n_folds=10)
   
   for i, (train_split, val_split) in enumerate(skf):
-    train_split_0 = train_split
-    val_split_0 = val_split
-    break
+    if i == fold:
+      train_split_0 = train_split
+      val_split_0 = val_split
+      break
   audio_length = 32000
   data_set = DataSet.load(path)
   assert isinstance(data_set, DataSet)
@@ -111,15 +116,22 @@ def gpat_extrator(prods):
   
   return pre_gores
 
-def make_submission_file(prods, tra_csv_path, sub_csv_path, th):
+def make_submission_file(prods, tra_csv_path, sub_csv_path,
+                         th=None, sub_name=None):
   console.supplement('>>Making submission file...')
   LABELS = GPAT.get_total_labels(tra_csv_path)
   top_3 = np.array(LABELS)[prods]
   predicted_labels = [' '.join(list(x)) for x in top_3]
   sub_csv = pd.read_csv(sub_csv_path)
   sub_csv['label'] = predicted_labels
-  sub_csv[['fname', 'label']].to_csv(
-    th.job_dir + "submission_{}.csv".format(th.mark), index=False)
+  if th is None:
+    if sub_name is None:
+      save_path = './model_submission.csv'
+    else:
+      save_path = sub_name
+  else:
+    save_path = th.job_dir + "submission_{}.csv".format(th.mark)
+  sub_csv[['fname', 'label']].to_csv( save_path, index=False)
   console.supplement('>> submission file created')
   
 def get_scores(prediction, labels):
@@ -223,7 +235,6 @@ def preprocess(data, train_mean=None):
     return X_train, mean
   else:
     return X_train
-  
 
 def load_demo_data(path):
   train = pd.read_csv("../data/original_data/train.csv")
@@ -268,7 +279,7 @@ def load_demo_data(path):
   
   return train_set, val_set
 
-def load_test_data(path, train_mean):
+def load_test_data(path, train_mean=None):
   test = pd.read_csv("../data/original_data/sample_submission.csv")
   test.set_index("fname", inplace=True)
   
@@ -277,9 +288,12 @@ def load_test_data(path, train_mean):
   config = Config(sampling_rate_raw=16000, audio_duration=2, n_folds=10,
                   learning_rate=0.001, use_mfcc=True, n_mfcc=50,
                   sampling_rate=16000)
+  
+  train_csv = train_csv.head()
+  
   X_train, X_train_t = prepare_data(train_csv, config, path)
   # X_train_n = prepare_data(train, config, path, noise=True)
-  X_train = preprocess(X_train, train_mean=train_mean)
+  X_train, mean = preprocess(X_train, train_mean=train_mean)
   # TODO:
   
   X_train_t = np.expand_dims(X_train_t, axis=-1)
@@ -296,6 +310,154 @@ def read_pickle_data(file_name):
     with open(file_name, 'rb') as f:
         data = pickle.load(f)
     return data
+
+
+def compare_lists(list_1, list_2):
+  assert len(list_1) == len(list_2)
+  different_indices = []
+  for i in range(len(list_1)):
+    if list_1[i] != list_2[i]:
+      different_indices.append(i)
+  
+  return different_indices
+
+def compare_submmits(csv_path_1, csv_path_2):
+  submission_1 = pd.read_csv(csv_path_1)
+  submission_2 = pd.read_csv(csv_path_2)
+  
+  def get_labels_as_list(sub):
+    labels_fir = []
+    labels = sub['label']
+    for i in range(len(labels)):
+      labels_fir.append(labels[i].split(' ')[0])
+      # labels_fir.append(labels[i])
+	    
+    return labels_fir
+  
+  sub_1 = get_labels_as_list(submission_1)
+  sub_2 = get_labels_as_list(submission_2)
+  
+  diff_indices = compare_lists(sub_1, sub_2)
+  
+  return diff_indices
+
+def prods_op(path, sub_name=None, rand_num=None):
+  files = os.listdir(path)
+  if rand_num is not None:
+    file_ids = list(np.arange(len(files)))
+    file_val_list = random.sample(file_ids, rand_num)
+  else:
+    file_val_list = list(np.arange(len(files)))
+  file_val_list = np.sort(file_val_list)
+	  
+  for i, file in enumerate(files):
+    if i not in file_val_list:continue
+    file = os.path.join('prods/', file)
+    if i == file_val_list[0]:
+      prods = read_pickle_data(file)
+    else:
+      prod = read_pickle_data(file)
+      prods *= prod
+  
+  prods = gpat_extrator(prods)
+  data_path = '../data/original_data'
+  tra_csv_path = data_path + '/' + 'train.csv'
+  sub_csv_path = data_path + '/' + 'sample_submission.csv'
+  make_submission_file(prods, tra_csv_path, sub_csv_path, sub_name=sub_name)
+
+def counter_csv(path):
+  files = os.listdir(path)
+  csv_container = []
+  for file in files:
+    file = os.path.join('submissions/', file)
+    csv_container.append(pd.read_csv(file)['label'])
+  label_temp = []
+  count_container = []
+  for i in range(len(csv_container[0])):
+    for j in range(len(files)):
+      label_temp.append(csv_container[j][i].split(' ')[0])
+    num = Counter(label_temp).most_common(1)[0][1]
+    count_container.append(num)
+    label_temp = []
+  counter_result = Counter(count_container)
+  print(counter_result)
+
+# TODO: violent vote
+def vote(path, sub_path):
+  files = os.listdir(path)
+  csv_container = []
+  for file in files:
+    file = os.path.join('./submissions/', file)
+    csv_container.append(pd.read_csv(file)['label'])
+  label_temp_1 = []
+  label_temp_2 = []
+  label_temp_3 = []
+  for i in range(len(csv_container[0])):
+    for j in range(len(files)):
+      label_temp_1.append(csv_container[j][i].split(' ')[0])
+      label_temp_2.append(csv_container[j][i].split(' ')[1])
+      label_temp_3.append(csv_container[j][i].split(' ')[2])
+    label_1 = Counter(label_temp_1).most_common(1)[0][0]
+    label_2 = Counter(label_temp_2).most_common(1)[0][0]
+    label_3 = Counter(label_temp_3).most_common(1)[0][0]
+    
+    if i == 0:
+      predicted_labels = np.array([label_1, label_2, label_3]).reshape(1, -1)
+    else:
+      predicted_labels_t = np.array([label_1, label_2, label_3]).reshape(1, -1)
+      predicted_labels = np.concatenate((predicted_labels,
+                                         predicted_labels_t), axis=0)
+    label_temp_1 = []
+    label_temp_2 = []
+    label_temp_3 = []
+
+  predicted_sub = [' '.join(list(x)) for x in predicted_labels]
+  data_path = '../data/original_data'
+  sub_csv_path = data_path + '/' + 'sample_submission.csv'
+  sub_csv = pd.read_csv(sub_csv_path)
+  sub_csv['label'] = predicted_sub
+  save_path = sub_path
+  sub_csv[['fname', 'label']].to_csv(save_path, index=False)
+  console.supplement('>> submission file created')
+
+def vote_val(path, sub_path):
+  files = os.listdir(path)
+  prods = []
+  for i, file in enumerate(files):
+    file = os.path.join('./prods', file)
+    prods.append(read_pickle_data(file))
+	
+  for i in range(len(prods[0])):
+    for j in range(len(prods)):
+      if j == 0:
+        prods_temp = prods[j][i].reshape(1, -1)
+      else:
+        prod = prods[j][i].reshape(1, -1)
+        prods_temp = np.concatenate((prods_temp, prod), axis=0)
+		
+    ve = VoteEngine(prods_temp)
+    if i == 0:
+      result = np.array(ve.top_k(3)).reshape(1, -1)
+    else:
+      result = np.concatenate((result,
+                               np.array(ve.top_k(3)).reshape(1, -1)),
+                              axis=0)
+  data_path = '../data/original_data'
+  tra_csv_path = data_path + '/' + 'train.csv'
+  sub_csv_path = data_path + '/' + 'sample_submission.csv'
+  make_submission_file(result, tra_csv_path, sub_csv_path,
+                       sub_name=sub_path)
+    
+def condition_index(data, mask):
+    # generate a assist list that has the same size with the input list
+    assist_list = np.arange(data.size)
+    assist_list = np.reshape(assist_list, data.shape)
+    condition_index = assist_list[mask]
+
+    return condition_index.tolist()
+    
+    
+	   
   
 if __name__ == '__main__':
   # path = '../data/processed_data/traindata_fs_16000_all.tfd'

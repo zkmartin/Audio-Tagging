@@ -1,71 +1,14 @@
-import sys
-import os
-import pandas as pd
+from tframe import console
+import time
+
+
+# total = 1000
+# start_time = time.time()
+# for i in range(total):
+# 	time.sleep(0.01)
+# 	console.print_progress(i + 1, total, start_time)
+	
+# console.show_status('Done!!!!')
+
 import numpy as np
-import tensorflow as tf
-import librosa
-from tframe.data.dataset import DataSet
-from at.gpat_data import Gpat_set
-from tframe.data.sequences.signals.signal_set import SignalSet
-from at.data_utils import load_simulate_test_data
-
-# csv_path = './data/original_data/train.csv'
-# from sklearn.cross_validation import StratifiedKFold
-# # from sklearn.model_selection import StratifiedKFold
-#
-# train = pd.read_csv(csv_path)
-# LABELS = list(train.label.unique())
-# label_idx = {label: i for i, label in enumerate(LABELS)}
-# train.set_index("fname", inplace=True)
-# train["label_idx"] = train.label.apply(lambda x: label_idx[x])
-# # split the train_set and the val_set
-# skf = StratifiedKFold(train.label_idx, n_folds=10)
-# for (train_split, val_split) in skf:
-# 	val_labels = train.label_idx[val_split]
-# 	# for i in range(41):
-# 	# 	print(len(val_labels[val_labels == i]))
-# 	a = 1
-
-
-# file_path = 'data/original_data/audio_test/0b0427e2.wav'
-# data, _ = librosa.core.load(file_path, sr=16000)
-# a = 1
-
-
-# file_path = 'data/original_data/testdata_fs_16000/0b0427e2.tfds'
-# file_path = 'data/original_data/testdata_fs_16000/ffeba2cd.tfds'
-# data = SignalSet.load(file_path)
-# a = 1
-
-#
-# data_fft = librosa.feature.spectral_centroid(data, sr=16000, n_fft=2048)
-# a = 1
-
-# with tf.device('/gpu:0'):
-# 	a = tf.constant([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], shape=[2, 3], name='a')
-# 	b = tf.constant([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], shape=[3, 2], name='b')
-# with tf.device('/gpu:1'):
-# 	c = tf.matmul(a, b)
-# 	# Creates a session with log_device_placement set to True.
-# with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
-# # Runs the op.
-# 	print(sess.run(c))
-
-csv_file_path = 'data/original_data/sample_submission.csv'
-submission = pd.read_csv(csv_file_path)
-submission.set_index('fname', inplace=True)
-labels = submission['label']
-print(labels[0].split(' ')[0])
-
-def compare_submmits(csv_path_1, csv_path_2):
-	submission_1 = pd.read_csv(csv_path_1)
-	submission_2 = pd.read_csv(csv_path_2)
-	
-	def get_labels_as_list(sub):
-		labels_fir = []
-		labels = sub['label']
-		for i in range(len(labels)):
-			labels.append()
-	
-
 

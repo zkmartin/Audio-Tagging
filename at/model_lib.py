@@ -293,7 +293,8 @@ def multiinput(th):
   subsubnet.add(Dropout(th.keep_prob))
   subsubnet.add(Flatten())
 
-  model.add(Dropout(th.concat_keep_prob))
+
+  model.add(Dropout(th.keep_prob))
   model.add(Linear(output_dim=128))
   model.add(BatchNorm())
   model.add(Activation('relu'))
