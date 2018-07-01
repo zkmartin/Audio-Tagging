@@ -7,7 +7,7 @@ import model_lib as models
 import os
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-os.environ["CUDA_VISIBLE_DEVICES"] = core.th.visible_gpu_id
+# os.environ["CUDA_VISIBLE_DEVICES"] = core.th.visible_gpu_id
 def main(_):
   console.start('Multinput task')
 
