@@ -10,8 +10,7 @@ from tframe.layers import Conv1D, MaxPool2D, Conv2D
 from tframe.layers import Dropout, BatchNorm
 from tframe.layers import Flatten
 from extensions import MaxPool1D
-from extensions import Flatten_Test
-from extensions import Conv_1d
+from data_utils.gpat_classsifer import Classifier_Gpat
 from extensions import GlobalMaxPooling1D
 from tframe.config import Config
 
@@ -189,34 +188,10 @@ def conv_2d_test(th):
   
   return model
 
-def conv_acc_test(th):
-  assert isinstance(th, Config)
-  # Initiate model
-  th.mark = 'cnn' + th.mark
-  model = Predictor(mark=th.mark)
-  
-  # Add input layer
-  model.add(Input(sample_shape=[1000, 1]))
-  # Add hidden layers
-  model.add(Conv1D(filters=10, kernel_size=3, padding='valid'))
-  # model.add(Conv_1d(filters=10, kernel_size=3))
-  # model.add(Linear(output_dim=1000))
-  model.add(Activation('relu'))
-  model.add(Flatten())
-  # model.add(Flatten_Test())
-  
-  # Add output layer
-  model.add(Linear(output_dim=1000))
-  
-  # Build model
-  optimizer = tf.train.AdamOptimizer(learning_rate=th.learning_rate)
-  model.build(optimizer=optimizer)
-  
-  return model
-
 def multiinput(th):
   assert isinstance(th, Config)
-  model = Classifier(mark=th.mark)
+  # model = Classifier(mark=th.mark)
+  model = Classifier_Gpat(mark=th.mark)
   
   def data_dim(sample_rate=16000, duration=2, n_mfcc=50):
     audio_length = sample_rate * duration

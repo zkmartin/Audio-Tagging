@@ -9,10 +9,10 @@ for _ in range(DIR_DEPTH + 1):
   sys.path.insert(0, ROOT)
 from tframe import console, SaveMode
 from tframe.trainers import SmartTrainerHub
-from data_utils import load_data, evaluate, load_demo_data, load_test_data
+from data_utils_temp import load_data, evaluate, load_demo_data, load_test_data
 from tframe.data.dataset import DataSet
-from data_utils import load_simulate_test_data
 from tframe.config import Flag
+from at.data_utils.gpat import GPAT
 
 
 from_root = lambda path: os.path.join(ROOT, path)
@@ -22,6 +22,7 @@ class GpatHub(SmartTrainerHub):
   mfcc_keep_prob = Flag.float(0.7, 'mfcc part dropout keep prob')
   concat_keep_prob = Flag.float(0.9, 'concat part dropout keep prob')
   visible_gpu_id = Flag.string("0", 'The gpu visible to cuda')
+  rand_pos = Flag.boolean(False, 'if rand position or not')
 
 GpatHub.register()
 
@@ -49,30 +50,17 @@ def activate():
   # assert isinstance(model, )
 
   # Load data
-
-  # path = '../data/original_data/traindata_fs_16000'fd
-  path = '../data/processed_data/traindata_fs_16000_all.tfd'
-  csv_path = '../data/original_data/train.csv'
-  train_set, val_set, test_set, raw_val_set = load_data(path,
-                                                        csv_path, fold=th.fold)
-  # if th.train:
-  #   path = '../data/original_data/audio_train/'
-  #   train_set, val_set = load_demo_data(path)
-  # else:
-  #   path = '../data/original_data/audio_test/'
-  #   test_set = load_test_data(path)
-    
-  # train_set2, val_set2, test_set2 = load_data(path2)
-  # assert isinstance(train_set, DataSet)
+  path = '../data/processed_data/'
+  train_set, val_set, test_set = GPAT.load_data_set(path, th, random_pos=th.rand_pos,
+                                                   test_all=False)
   
   # Train or evaluate
   if th.train:
     model.train(train_set, validation_set=val_set, trainer_hub=th)
   else:
     model.launch_model(overwrite=False)
-    evaluate(model, test_set, th, scores=True)
-    # evaluate(model, val_set)
-    # evaluate(model, test_set, plot=True)
-
+    # evaluate(model, test_set, th, scores=True)
+    GPAT.evaluate(model, test_set, th)
+	  
   # End
   console.end()

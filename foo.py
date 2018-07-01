@@ -10,5 +10,19 @@ import time
 	
 # console.show_status('Done!!!!')
 
+
+import os
 import numpy as np
+from at.data_utils.gpat import GPAT
+
+class a(object):
+	test1 = 1
+
+class b(a):
+	test2 = 1
+	
+c = b()
+print(isinstance(c, a))
+
+
 

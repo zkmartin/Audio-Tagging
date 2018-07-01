@@ -4,7 +4,7 @@ from tframe.data.dataset import DataSet
 from tframe.utils import misc
 from tframe import checker
 from tframe.data.sequences.signals.signal import Signal
-from data.gpat import GPAT
+from at.data_utils.gpat import GPAT
 from utils import plot_bar_diagram
 from tframe.utils import console
 

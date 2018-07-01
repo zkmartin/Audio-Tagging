@@ -9,13 +9,19 @@
 *.pkl
 *.csv
 *.ipynb
+*.sh
+*.bat
 
 # Ignore records and data folders
 *records*/
 submissions/
+
 data/
 .ipynb_checkpoints/
-
+debug_test/
+checkpoints/
+logs/
+notes/
 # Ignore vim files
 *.swp
 

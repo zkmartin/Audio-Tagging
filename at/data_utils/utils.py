@@ -2,7 +2,9 @@ import sys
 import zipfile
 import os
 import shutil
+import pickle
 import numpy as np
+
 
 def get_sizeof_series(data):
 	"""return a memory size of a sequence"""
@@ -35,7 +37,26 @@ def makdir(path):
 		pass
 	else:
 		os.mkdir(path)
+		
+def check_dir(paths):
+	if isinstance(paths, str):paths = [paths]
+	if len(paths) == 1:makdir(paths[0])
+	path = paths[0]
+	for i in range(len(paths)):
+		makdir(path)
+		if i == len(paths) - 1: break
+		path = os.path.join(path, paths[i + 1])
 
+def pickle_data(data, file_name):
+	with open(file_name, 'wb') as f:
+		pickle.dump(data, f)
+	
+def read_pickle_data(file_name):
+	with open(file_name, 'rb') as f:
+		data = pickle.load(f)
+	return data
+	
 if __name__ == '__main__':
-	a = np.array([1, 2, 3], dtype=np.float64)
-	print(sys.getsizeof(a[0]))
+	root_path = os.path.dirname(os.path.abspath(__file__))
+	paths = [root_path, 'test1', 'test2']
+	check_dir(paths)

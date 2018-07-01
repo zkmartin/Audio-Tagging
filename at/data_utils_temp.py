@@ -9,20 +9,16 @@ try:
 except:
   import pickle
 
-from tframe import checker
 from tframe import Classifier
 from tframe.data.dataset import DataSet
-from tframe.data.sequences.signals.signal_set import SignalSet
 from tframe.data.sequences.signals.signal import Signal
-from tframe import pedia
-from data.gpat import GPAT
+from at.data_utils.gpat import GPAT
 from at.gpat_data import Gpat_set
 from tframe.utils.misc import convert_to_dense_labels
 from tframe.utils import console
 from tframe.utils.local import check_path
 from tensorflow.python.keras.utils import to_categorical
 from collections import Counter
-import matplotlib.pyplot as plt
 from utils.vote import VoteEngine
 
 from sklearn.cross_validation import StratifiedKFold
