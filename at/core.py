@@ -16,12 +16,14 @@ from at.data_utils.gpat import GPAT
 
 
 from_root = lambda path: os.path.join(ROOT, path)
+
 class GpatHub(SmartTrainerHub):
-  fold = Flag.integer(0, 'cross-validation fold id')
-  raw_keep_prob = Flag.float(0.7, 'raw part dropout keep prob')
+  fold = Flag.integer(0, 'cross-validation fold id', name='fold')
+  raw_keep_prob = Flag.float(0.7, 'raw part dropout keep prob',
+                             name='raw_keep_prob')
   mfcc_keep_prob = Flag.float(0.7, 'mfcc part dropout keep prob')
   concat_keep_prob = Flag.float(0.9, 'concat part dropout keep prob')
-  visible_gpu_id = Flag.string("0", 'The gpu visible to cuda')
+  # visible_gpu_id = Flag.string("0", 'The gpu visible to cuda')
   rand_pos = Flag.boolean(False, 'if rand position or not')
 
 GpatHub.register()
