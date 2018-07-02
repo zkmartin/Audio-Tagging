@@ -23,8 +23,8 @@ class GpatHub(SmartTrainerHub):
                              name='raw_keep_prob')
   mfcc_keep_prob = Flag.float(0.7, 'mfcc part dropout keep prob')
   concat_keep_prob = Flag.float(0.9, 'concat part dropout keep prob')
-  # visible_gpu_id = Flag.string("0", 'The gpu visible to cuda')
   rand_pos = Flag.boolean(False, 'if rand position or not')
+  test_all = Flag.boolean(False, 'Whether test all sequences or not')
 
 GpatHub.register()
 
@@ -51,10 +51,11 @@ def activate():
   model = th.model(th)
   # assert isinstance(model, )
 
+  if th.rand_pos:th.mark += '_rand_pos'
   # Load data
   path = '../data/processed_data/'
   train_set, val_set, test_set = GPAT.load_data_set(path, th, random_pos=th.rand_pos,
-                                                   test_all=False)
+                                                   test_all=th.test_all)
   
   # Train or evaluate
   if th.train:

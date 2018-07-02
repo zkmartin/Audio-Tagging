@@ -112,22 +112,20 @@ class GPAT(object):
 				# not finished
 				pickle_data(train_mean, os.path.join(mean_path, file_name_mean))
 				pickle_data(train_std, os.path.join(mean_path, file_name_std))
-			else:
-				data_set = train
-				assert isinstance(data_set, SequenceSet)
-				data_set.batch_preprocessor = cls._batch_processor(audio_length, sr)
-				data_set.length_calculator = lambda x:1
-			data_set.properties[data_set.NUM_CLASSES] = 41
-			cls.init_groups(data_set)
-			if data_set.is_regular_array:
 				val_set = data_set[val_split]
 				data_set = data_set[train_split]
 			else:
-				val_set, val_mean, val_std = cls._batch_processor(audio_length,
-				                                                 sr)(train[val_split])
+				data_set = train[train_split]
+				assert isinstance(data_set, SequenceSet)
+				data_set.batch_preprocessor = cls._batch_processor(audio_length, sr)
+				data_set.length_calculator = lambda x:1
+				val_set = cls._batch_processor(audio_length, sr)(train[val_split])
+			data_set.properties[data_set.NUM_CLASSES] = 41
+			cls.init_groups(data_set)
 			test_set = None
 		else:
 			# Load test data
+			console.show_status('Loading test data...')
 			test = SequenceSet.load(test_file)
 			assert isinstance(test, SequenceSet)
 			if not test_all:
@@ -174,12 +172,19 @@ class GPAT(object):
 				targets = np.array(targets)
 				targets = np.reshape(targets, (targets.shape[0], -1))
 			mfccs = np.array(mfccs)
-			# mfccs, train_mean, train_std = cls.preprocess(mfccs, mean=mean, std=std)
+			# preprocess : train:fixed position, test fixed position fixed postion test
+			# not preprocessing : train random position, test random position, val
+			# random position
+			if mean is not None:
+				mfccs, train_mean, train_std = cls.preprocess(mfccs, mean=mean, std=std)
+			else:
+				if (len(seqset.features) > 5000) and targets is not None:
+					mfccs, train_mean, train_std = cls.preprocess(mfccs, mean=mean, std=std)
 			# TODO
 			data_set = DataSet(features=features, targets=targets,
 			                   data_dict={'mfcc':mfccs})
-			if mean is None and (len(seqset.features) > 512):
-				return data_set, None, None
+			if mean is None and (len(seqset.features) > 5000) and targets is not None:
+				return data_set, train_mean, train_std
 			else:
 				return data_set
 		return batch_preprocessor
@@ -326,10 +331,12 @@ class GPAT(object):
 		num_record = []
 		seqs_split, num= GPAT.split_seq(seqs[0], block_length)
 		num_record.append(num)
+		total = len(seqs) - 1
 		for i in range(1, len(seqs)):
 			seq, num = GPAT.split_seq(seqs[i], block_length)
 			seqs_split = np.concatenate((seqs_split, seq), axis=0)
 			num_record.append(num)
+			console.print_progress(i + 1, total=total)
 		return seqs_split, num_record
 	
 	@staticmethod
@@ -364,6 +371,7 @@ class GPAT(object):
 	def init_groups(data_set):
 		targets = data_set.targets if data_set.targets is not None else data_set.summ_dict['targets']
 		targets = np.array(targets)
+		targets = np.reshape(targets, (targets.shape[0], -1))
 		if data_set.num_classes is None:return
 		groups = []
 		dense_labels = convert_to_dense_labels(targets)
