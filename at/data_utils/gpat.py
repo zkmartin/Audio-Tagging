@@ -81,11 +81,6 @@ class GPAT(object):
 		train_file_name = 'train_data.tfds' if not ver_only else 'train_data_ver.tfds'
 		train_file = os.path.join(path, train_file_name)
 		test_file = os.path.join(path, 'test_data.tfds')
-		# Load sequenceset data
-		train = SequenceSet.load(train_file)
-		test = SequenceSet.load(test_file)
-		assert isinstance(train, SequenceSet)
-		assert isinstance(test, SequenceSet)
 		# Mean and std path
 		dn = os.path.dirname
 		root_dir = dn(dn(os.path.abspath(__file__)))
@@ -95,6 +90,9 @@ class GPAT(object):
 		file_name_std = th.job_dir + '_' + th.mark + '_std.pkl'
 		# If th.train is True
 		if th.train:
+			# Load train data
+			train = SequenceSet.load(train_file)
+			assert isinstance(train, SequenceSet)
 			label_idx = (train.summ_dict['targets'])
 			label_idx = [convert_to_dense_labels(label_idx[i])[0]
 									 for i in range(len(label_idx))]
@@ -129,6 +127,9 @@ class GPAT(object):
 				                                                 sr)(train[val_split])
 			test_set = None
 		else:
+			# Load test data
+			test = SequenceSet.load(test_file)
+			assert isinstance(test, SequenceSet)
 			if not test_all:
 				if not random_pos:
 					mean = read_pickle_data(os.path.join(mean_path, file_name_mean))
