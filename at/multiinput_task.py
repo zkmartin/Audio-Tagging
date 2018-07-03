@@ -24,7 +24,7 @@ def main(_):
   th.patience = 100
   th.shuffle = True
 
-  th.train = False
+  # th.train = False
   th.smart_train = False
   th.max_bad_apples = 4
   th.lr_decay = 0.6
@@ -42,7 +42,7 @@ def main(_):
   th.raw_keep_prob = 0.9
   th.mfcc_keep_prob = 0.7
   th.concat_keep_prob = 0.9
-  th.fold = 0
+  th.fold = 9
   # th.shuffle = False
   
   th.rand_pos = True
