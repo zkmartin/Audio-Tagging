@@ -11,7 +11,9 @@ def main(_):
 
   # Configurations
   th = core.th
-  th.job_dir = 'ver_only_task'
+  # th.job_dir = 'new_ubuntu_rand_pos'
+  # th.job_dir = 'modified_data_task'
+  th.job_dir = 'triple_towers_test'
   th.model = models.multiinput
   th.actype1 = 'relu'
 
@@ -42,11 +44,13 @@ def main(_):
   th.raw_keep_prob = 0.9
   th.mfcc_keep_prob = 0.7
   th.concat_keep_prob = 0.9
-  th.fold = 0
+  th.fold = 2
   # th.shuffle = False
   
   th.rand_pos = True
-  th.test_all = False
+  th.test_all = True
+  th.val_on_train_set = False
+  th.modify_train_ver_n = False
   
   th.visible_gpu_id = '0'
   
@@ -55,8 +59,10 @@ def main(_):
   # description = 'raw_data_mfcc_dropout_{}_{}'.format(th.mfcc_keep_prob,
   #                                                    th.concat_keep_prob)
   # description = 'recover_rand_over_classes_test'
-  description = 'raw_data_mfcc_simplified_dropout_0.7_0.9_{}'.format(th.fold)
+  description = 'raw_data_mfcc_simplified_dropout_{}_{}_{}'.format(
+    th.mfcc_keep_prob, th.concat_keep_prob, th.fold)
   # description = 'raw_data_mfcc_simlified_dropout_0.7_reg_0.2_sap_all'
+  description = 'multiprocess_test'
   th.mark = 'cnn_{}'.format(description)
 
   export_false = True

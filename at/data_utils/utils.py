@@ -55,6 +55,7 @@ def read_pickle_data(file_name):
 	with open(file_name, 'rb') as f:
 		data = pickle.load(f)
 	return data
+
 	
 if __name__ == '__main__':
 	root_path = os.path.dirname(os.path.abspath(__file__))

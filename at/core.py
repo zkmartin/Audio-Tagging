@@ -13,6 +13,7 @@ from data_utils_temp import load_data, evaluate, load_demo_data, load_test_data
 from tframe.data.dataset import DataSet
 from tframe.config import Flag
 from at.data_utils.gpat import GPAT
+from at.data_utils.utils import pickle_data
 
 
 from_root = lambda path: os.path.join(ROOT, path)
@@ -25,6 +26,8 @@ class GpatHub(SmartTrainerHub):
   concat_keep_prob = Flag.float(0.9, 'concat part dropout keep prob')
   rand_pos = Flag.boolean(False, 'if rand position or not')
   test_all = Flag.boolean(False, 'Whether test all sequences or not')
+  val_on_train_set = Flag.boolean(False, 'Whether validate on tht training set')
+  modify_train_ver_n = Flag.boolean(False, 'Whether to modify the unverified set')
 
 GpatHub.register()
 
@@ -47,23 +50,38 @@ th.idle_tol = 10
 
 
 def activate():
+  if th.rand_pos:th.mark += '_rand_pos'
+  
   assert callable(th.model)
   model = th.model(th)
   # assert isinstance(model, )
 
-  if th.rand_pos:th.mark += '_rand_pos'
   # Load data
   path = '../data/processed_data/'
-  train_set, val_set, test_set = GPAT.load_data_set(path, th, random_pos=th.rand_pos,
-                                                   test_all=th.test_all)
-  
-  # Train or evaluate
-  if th.train:
-    model.train(train_set, validation_set=val_set, trainer_hub=th)
+  if not th.modify_train_ver_n:
+    train_set, val_set, test_set, all_train_set, train_split = GPAT.load_data_set(
+																											path, th,
+																											random_pos=th.rand_pos,
+																											test_all=th.test_all)
   else:
+    test_set = GPAT.load_ver_n_data(path, id=1)
+  # Train or evaluate
+  if th.train and not th.val_on_train_set:
+    model.train(train_set, validation_set=val_set, trainer_hub=th)
+  if not th.train and not th.val_on_train_set:
     model.launch_model(overwrite=False)
     # evaluate(model, test_set, th, scores=True)
-    GPAT.evaluate(model, test_set, th)
+    if not th.modify_train_ver_n:
+      GPAT.evaluate(model, test_set, th, save_prods=True)
+    else:
+      cor_inds, false_inds = model.evaluate_model(test_set,
+                                                  batch_size=th.val_batch_size)
+      
+      pickle_data(cor_inds, os.path.join('./indices', th.mark + '.pkl'))
+  if th.val_on_train_set:
+    model.evaluate_model(val_set, batch_size=th.val_batch_size)
+    
+    
 	  
   # End
   console.end()

@@ -265,6 +265,33 @@ def multiinput(th):
   subsubnet.add(Flatten())
 
 
+  subsubnet = subnet.add()
+  subsubnet.add(Input(sample_shape=[1025, 63, 1], name='stft'))
+  subsubnet.add(Conv2D(32, (4, 10), padding='same'))
+  subsubnet.add(BatchNorm())
+  subsubnet.add(Activation('relu'))
+  subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
+  subsubnet.add(Dropout(th.mfcc_keep_prob))
+
+  subsubnet.add(Conv2D(32, (4, 10), padding='same'))
+  subsubnet.add(BatchNorm())
+  subsubnet.add(Activation('relu'))
+  subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
+  subsubnet.add(Dropout(th.mfcc_keep_prob))
+  #
+  subsubnet.add(Conv2D(32, (4, 10), padding='same'))
+  subsubnet.add(BatchNorm())
+  subsubnet.add(Activation('relu'))
+  subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
+  subsubnet.add(Dropout(th.mfcc_keep_prob))
+
+  subsubnet.add(Conv2D(32, (4, 10), padding='same'))
+  subsubnet.add(BatchNorm())
+  subsubnet.add(Activation('relu'))
+  subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
+  subsubnet.add(Dropout(th.mfcc_keep_prob))
+  subsubnet.add(Flatten())
+
   model.add(Dropout(th.concat_keep_prob))
   model.add(Linear(output_dim=128))
   model.add(BatchNorm())
@@ -373,21 +400,20 @@ def res_00(th):
   subsubnet.add(BatchNorm())
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool1D(pool_size=16, strides=16))
-  subsubnet.add(Dropout(0.9))
+  subsubnet.add(Dropout(th.raw_keep_prob))
   
   subsubnet.add(Conv1D(filters=32, kernel_size=3, padding='valid'))
   subsubnet.add(Activation('relu'))
   subsubnet.add(Conv1D(filters=32, kernel_size=3, padding='valid'))
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool1D(pool_size=4, strides=4))
-  subsubnet.add(Dropout(0.9))
+  subsubnet.add(Dropout(th.raw_keep_prob))
   
   subsubnet.add(Conv1D(filters=32, kernel_size=3, padding='valid'))
   subsubnet.add(Activation('relu'))
   subsubnet.add(Conv1D(filters=32, kernel_size=3, padding='valid'))
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool1D(pool_size=4, strides=4))
-  model.add(Dropout(0.8))
   
   subsubnet.add(Conv1D(filters=256, kernel_size=3, padding='valid'))
   subsubnet.add(BatchNorm())
@@ -404,7 +430,7 @@ def res_00(th):
   subsubnet.add(BatchNorm())
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
-  subsubnet.add(Dropout(th.keep_prob))
+  subsubnet.add(Dropout(th.mfcc_keep_prob))
   
   net = subsubnet.add(ResidualNet())
   net.add(Conv2D(32, (4, 10), padding='same'))
@@ -412,7 +438,7 @@ def res_00(th):
   net.add_shortcut()
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
-  subsubnet.add(Dropout(th.keep_prob))
+  subsubnet.add(Dropout(th.mfcc_keep_prob))
   #
   net = subsubnet.add(ResidualNet())
   net.add(Conv2D(32, (4, 10), padding='same'))
@@ -420,7 +446,7 @@ def res_00(th):
   net.add_shortcut()
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
-  subsubnet.add(Dropout(th.keep_prob))
+  subsubnet.add(Dropout(th.mfcc_keep_prob))
   
   net = subsubnet.add(ResidualNet())
   net.add(Conv2D(32, (4, 10), padding='same'))
@@ -428,7 +454,7 @@ def res_00(th):
   net.add_shortcut()
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
-  subsubnet.add(Dropout(th.keep_prob))
+  subsubnet.add(Dropout(th.mfcc_keep_prob))
 
   net = subsubnet.add(ResidualNet())
   net.add(Conv2D(32, (4, 10), padding='same'))
@@ -436,9 +462,10 @@ def res_00(th):
   net.add_shortcut()
   subsubnet.add(Activation('relu'))
   subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
-  subsubnet.add(Dropout(th.keep_prob))
+  subsubnet.add(Dropout(th.mfcc_keep_prob))
   subsubnet.add(Flatten())
-  
+
+  subsubnet.add(Dropout(th.concat_keep_prob))
   model.add(Linear(output_dim=128))
   model.add(BatchNorm())
   model.add(Activation('relu'))
@@ -456,6 +483,80 @@ def res_00(th):
   model.build(optimizer=optimizer)
   
   return model
+
+def multinput_ver_only(th):
+  assert isinstance(th, Config)
+  # model = Classifier(mark=th.mark)
+  model = Classifier_Gpat(mark=th.mark)
   
+  def data_dim(sample_rate=16000, duration=2, n_mfcc=50):
+    audio_length = sample_rate * duration
+    dim = (n_mfcc, 1 + int(np.floor(audio_length / 512)), 1)
+    return dim
+  dim = data_dim()
   
+  # Add hidden layers
+  subnet = model.add(inter_type=model.CONCAT)
+  # the net to process raw data
+  subsubnet = subnet.add()
+  # subsubnet.add(Input(sample_shape=[32000, 1], name='raw_data'))
+  subsubnet.add(Input(sample_shape=[32000, 1]))
+  subsubnet = conv1d_bn_relu(subsubnet, 32, 9)
+  subsubnet.add(MaxPool1D(pool_size=16, strides=16))
+  subsubnet.add(Dropout(th.raw_keep_prob))
+
+  subsubnet = conv1d_bn_relu(subsubnet, 32, 9)
+  subsubnet.add(Dropout(th.raw_keep_prob))
+  subsubnet.add(GlobalMaxPooling1D())
+  
+  # the net to process mfcc features
+  subsubnet = subnet.add()
+  subsubnet.add(Input(sample_shape=[dim[0], dim[1], 1], name='mfcc'))
+  subsubnet = con2d_bn_relu(subsubnet, 32, (4, 10))
+  subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
+  subsubnet.add(Dropout(th.mfcc_keep_prob))
+  
+  subsubnet = con2d_bn_relu(subsubnet, 32, (4, 10))
+  subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
+  subsubnet.add(Dropout(th.mfcc_keep_prob))
+  
+  subsubnet.add(Flatten())
+
+  model.add(Dropout(th.concat_keep_prob))
+  model.add(Linear(output_dim=64))
+  model.add(BatchNorm())
+  model.add(Activation('relu'))
+  # model.add(Dropout(th.concat_keep_prob))
+  
+  # Add output layer
+  model.add(Linear(output_dim=41))
+  model.add(Activation('softmax'))
+
+  # Build model
+  optimizer = tf.train.AdamOptimizer(learning_rate=th.learning_rate)
+  model.build(optimizer=optimizer)
+
+  return model
+
+def conv1d_bn_relu(net, filters, kernel_size, bn=True):
+  net.add(Conv1D(filters=filters, kernel_size=kernel_size,
+                 padding='valid'))
+  if bn: net.add(BatchNorm())
+  net.add(Activation('relu'))
+  
+  return net
+
+def con2d_bn_relu(net, filters, kernel_size, bn=True):
+  net.add(Conv2D(filters, kernel_size, padding='same'))
+  if bn: net.add(BatchNorm())
+  net.add(Activation('relu'))
+  
+  return net
+
+def linear_bn_relu(net, units, bn=False):
+  net.add(Linear(output_dim=units))
+  if bn: net.add(BatchNorm())
+  net.add(Activation('relu'))
+  
+  return net
 

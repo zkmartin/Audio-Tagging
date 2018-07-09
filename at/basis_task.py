@@ -1,18 +1,19 @@
 import tensorflow as tf
 import core
 from tframe import console
+from tframe.config import Flag
 from tframe.utils.misc import mark_str as ms
 import model_lib as models
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 def main(_):
-	console.start('Multinput task')
+	console.start('basis task')
 	
 	# Configurations
 	th = core.th
-	th.job_dir = 'res_task'
-	th.model = models.res_00
+	id = 11
+	th.job_dir = 'basis_task'
+	th.model = models.multinput_ver_only
 	th.actype1 = 'relu'
 	
 	th.epoch = 5000
@@ -37,21 +38,26 @@ def main(_):
 	th.monitor = False
 	
 	th.allow_growth = False
-	th.gpu_memory_fraction = 0.4
-
+	th.gpu_memory_fraction = 0.3
+	
 	th.raw_keep_prob = 0.9
 	th.mfcc_keep_prob = 0.7
 	th.concat_keep_prob = 0.9
-	th.fold = 0
+	th.fold = 1
 	# th.shuffle = False
-
+	
 	th.rand_pos = True
+	th.test_all = True
+	th.val_on_train_set = False
 	
-	th.visible_gpu_id = '0'
+	th.visible_gpu_id = '1'
 	
-	# description = 'cnn_raw_data_mfcc_random_rand'
-	description = 'raw_data_mfcc_dropout_{}_{}'.format(
-		th.mfcc_keep_prob, th.concat_keep_prob)
+	# description = 'raw_data_mfcc_dropout_{}_random_{}_fold_{}'.format(
+	#               th.mfcc_keep_prob, th.concat_keep_prob, th.fold)
+	# description = 'raw_data_mfcc_dropout_{}_{}'.format(th.mfcc_keep_prob,
+	#                                                    th.concat_keep_prob)
+	description = 'raw_data_mfcc_model_{}'.format(id)
+	# description = 'raw_data_mfcc_simlified_dropout_0.7_reg_0.2_sap_all'
 	th.mark = 'cnn_{}'.format(description)
 	
 	export_false = True
