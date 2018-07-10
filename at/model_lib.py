@@ -497,36 +497,49 @@ def multinput_ver_only(th):
   
   # Add hidden layers
   subnet = model.add(inter_type=model.CONCAT)
+  def conv_bn_relu(filters, twod=True, bn=True):
+    if twod:
+      subsubnet.add(Conv2D(filters=filters,
+                           kernel_size=(4, 10), padding='same'))
+    else:
+      subsubnet.add(Conv1D(filters=filters,
+                         kernel_size=9, padding='valid'))
+    if bn: subsubnet.add(BatchNorm())
+    subsubnet.add(Activation('relu'))
+  def maxpool_drop(pool_size, strides, twod=True, drop=True):
+    if twod:
+      subsubnet.add(MaxPool2D(pool_size=pool_size,
+                              strides=strides))
+    else:
+      subsubnet.add(MaxPool1D(pool_size=pool_size,
+                            strides=strides))
+    if drop: subsubnet.add(Dropout(th.raw_keep_prob))
   # the net to process raw data
   subsubnet = subnet.add()
-  # subsubnet.add(Input(sample_shape=[32000, 1], name='raw_data'))
   subsubnet.add(Input(sample_shape=[32000, 1]))
-  subsubnet = conv1d_bn_relu(subsubnet, 32, 9)
-  subsubnet.add(MaxPool1D(pool_size=16, strides=16))
-  subsubnet.add(Dropout(th.raw_keep_prob))
-
-  subsubnet = conv1d_bn_relu(subsubnet, 32, 9)
+  for _ in range(th.raw_std_blocks):
+    conv_bn_relu(filters=32, bn=True, twod=False)
+    maxpool_drop(pool_size=16, strides=16, drop=True, twod=False)
+  conv_bn_relu(filters=32, bn=True)
   subsubnet.add(Dropout(th.raw_keep_prob))
   subsubnet.add(GlobalMaxPooling1D())
   
   # the net to process mfcc features
   subsubnet = subnet.add()
   subsubnet.add(Input(sample_shape=[dim[0], dim[1], 1], name='mfcc'))
-  subsubnet = con2d_bn_relu(subsubnet, 32, (4, 10))
-  subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
-  subsubnet.add(Dropout(th.mfcc_keep_prob))
-  
-  subsubnet = con2d_bn_relu(subsubnet, 32, (4, 10))
-  subsubnet.add(MaxPool2D(pool_size=(2, 2), strides=(2, 2)))
-  subsubnet.add(Dropout(th.mfcc_keep_prob))
-  
+  for _ in range(th.mfcc_std_blocks):
+    conv_bn_relu(filters=th.mfcc_cnn_filters, bn=True)
+    maxpool_drop(pool_size=(2, 2), strides=(2, 2))
   subsubnet.add(Flatten())
-
+  
   model.add(Dropout(th.concat_keep_prob))
-  model.add(Linear(output_dim=64))
-  model.add(BatchNorm())
-  model.add(Activation('relu'))
-  # model.add(Dropout(th.concat_keep_prob))
+  def linear_bn_relu(units, bn=True):
+    model.add(Linear(output_dim=units))
+    if bn:model.add(BatchNorm())
+    model.add(Activation('relu'))
+  
+  for _ in range(th.concat_std_blocks):
+    linear_bn_relu(th.concat_part_units)
   
   # Add output layer
   model.add(Linear(output_dim=41))
@@ -538,25 +551,4 @@ def multinput_ver_only(th):
 
   return model
 
-def conv1d_bn_relu(net, filters, kernel_size, bn=True):
-  net.add(Conv1D(filters=filters, kernel_size=kernel_size,
-                 padding='valid'))
-  if bn: net.add(BatchNorm())
-  net.add(Activation('relu'))
-  
-  return net
-
-def con2d_bn_relu(net, filters, kernel_size, bn=True):
-  net.add(Conv2D(filters, kernel_size, padding='same'))
-  if bn: net.add(BatchNorm())
-  net.add(Activation('relu'))
-  
-  return net
-
-def linear_bn_relu(net, units, bn=False):
-  net.add(Linear(output_dim=units))
-  if bn: net.add(BatchNorm())
-  net.add(Activation('relu'))
-  
-  return net
 

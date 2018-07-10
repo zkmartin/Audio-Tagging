@@ -157,12 +157,14 @@ class GPAT(object):
 					test_set = DataSet.load(all_test_data_path)
 					assert isinstance(test_set, DataSet)
 					test_mfccs = arr_to_mfccs(test_set.features)
+					test_stfts = arr_to_stft(test_set.features)
 					test_features = np.empty(shape=test_set.features.shape)
 					for i in range(len(test_features)):
 						test_features[i, :] = GPAT.audio_norm(test_set.features[i, :])
 					test_features = np.expand_dims(test_features, axis=-1)
 					test_set = DataSet(features=test_features,
-					                   data_dict={'mfcc':test_mfccs})
+					                   data_dict={'mfcc':test_mfccs,
+					                              'stft':test_stfts})
 					test_set.nums = read_pickle_data(os.path.join(path,
 					                                              'all_test_data_nums.tfds'))
 			data_set, val_set = None, None
@@ -543,6 +545,15 @@ def arr_to_mfccs(data):
 		mfcc = np.expand_dims(mfcc, axis=-1)
 		mfccs[i, :] = mfcc
 	return mfccs
+
+def arr_to_stft(data):
+	stfts = np.empty(shape=(data.shape[0], 1025, 63, 1))
+	for i in range(len(data)):
+		stft = np.reshape(data[i, :], (-1, ))
+		stft = np.abs(librosa.stft(stft))
+		stft = np.expand_dims(stft, axis=-1)
+		stfts[i, :] = stft
+	return stfts
 	
 if __name__ == '__main__':
 	# path = '../../data/raw_data'

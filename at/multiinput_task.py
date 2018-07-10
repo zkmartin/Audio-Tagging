@@ -26,7 +26,7 @@ def main(_):
   th.patience = 100
   th.shuffle = True
 
-  # th.train = False
+  th.train = False
   th.smart_train = False
   th.max_bad_apples = 4
   th.lr_decay = 0.6
@@ -39,7 +39,7 @@ def main(_):
   th.monitor = False
   
   th.allow_growth = False
-  th.gpu_memory_fraction = 0.4
+  th.gpu_memory_fraction = 0.3
   
   th.raw_keep_prob = 0.9
   th.mfcc_keep_prob = 0.7
@@ -59,8 +59,8 @@ def main(_):
   # description = 'raw_data_mfcc_dropout_{}_{}'.format(th.mfcc_keep_prob,
   #                                                    th.concat_keep_prob)
   # description = 'recover_rand_over_classes_test'
-  description = 'raw_data_mfcc_simplified_dropout_{}_{}_{}'.format(
-    th.mfcc_keep_prob, th.concat_keep_prob, th.fold)
+  # description = 'raw_data_mfcc_simplified_dropout_{}_{}_{}'.format(
+  #   th.mfcc_keep_prob, th.concat_keep_prob, th.fold)
   # description = 'raw_data_mfcc_simlified_dropout_0.7_reg_0.2_sap_all'
   description = 'multiprocess_test'
   th.mark = 'cnn_{}'.format(description)

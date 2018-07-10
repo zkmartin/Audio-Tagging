@@ -28,6 +28,12 @@ class GpatHub(SmartTrainerHub):
   test_all = Flag.boolean(False, 'Whether test all sequences or not')
   val_on_train_set = Flag.boolean(False, 'Whether validate on tht training set')
   modify_train_ver_n = Flag.boolean(False, 'Whether to modify the unverified set')
+  raw_std_blocks = Flag.integer(1, 'the standard blocks in the raw net')
+  raw_cnn_filters = Flag.integer(32, 'the filters of the raw net')
+  mfcc_std_blocks = Flag.integer(1, 'the standard blocks in the raw net')
+  mfcc_cnn_filters = Flag.integer(32, 'the filters of the mfcc net')
+  concat_std_blocks = Flag.integer(1, 'the standard blocks of the concat part')
+  concat_part_units = Flag.integer(64, 'the concat part units')
 
 GpatHub.register()
 
